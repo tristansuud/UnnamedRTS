@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 635b0a4cea31f864e88dfeaad759a574, type: 3}
+  m_Name: TileMeshSet
+  m_EditorClassIdentifier: 
+  FlatTile: {fileID: 4696643130194549948, guid: a2e59a12aec48c449a6ec0c841ff34b7, type: 3}
+  RampTile: {fileID: -5864320914214940941, guid: 80ffef52973eb1b48adb8e1e9b6a0887, type: 3}
+  Corner1Tile: {fileID: 5761739814090621300, guid: 50b047b057baacc4ca0c7a75c52d7a31, type: 3}
+  Corner3Tile: {fileID: -7267502513224130616, guid: 7f65c6e5fcbffde4fa497b2b05d67278, type: 3}
+  SaddleTile: {fileID: 754419732089751967, guid: 5d5aa8fe2d9412245a596fd03a79d3e2, type: 3}
+  SteepTile: {fileID: 7293694249647789308, guid: fa1115b0e710d674fb9f30629d90d788, type: 3}
