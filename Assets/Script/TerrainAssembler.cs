@@ -10,7 +10,7 @@ public class TerrainAssembler : MonoBehaviour
 {
     
     [Header("Terrain Assembler Parameters")]
-    public GameObject terrainParent;
+    
     public float cellSize = 1f;
     [Header("Terrain tile Shapes data")]
     public TileMeshSet tileMeshSet;
@@ -19,6 +19,8 @@ public class TerrainAssembler : MonoBehaviour
     [Header("Temporary")]
     public TerrainGenerator generator;
 
+
+    private GameObject terrainParent;
     public enum TileType
     {
         Flat,
@@ -68,6 +70,10 @@ public class TerrainAssembler : MonoBehaviour
 
     private void GenerateTerrainInChunks(int[,] inputArray)
     {
+        terrainParent = new GameObject("Terrain");
+        terrainParent.transform.position = Vector3.zero;
+        terrainParent.transform.rotation = Quaternion.Euler(Vector3.zero);
+
         int width = inputArray.GetLength(0);
         int height = inputArray.GetLength(1);
 
