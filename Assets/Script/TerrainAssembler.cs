@@ -8,9 +8,9 @@ using UnityEngine;
 [RequireComponent(typeof(MeshRenderer))]
 public class TerrainAssembler : MonoBehaviour
 {
-    
+
     [Header("Terrain Assembler Parameters")]
-    
+    public TerrainData terrainDataObject;
     public float cellSize = 1f;
     [Header("Terrain tile Shapes data")]
     public TileMeshSet tileMeshSet;
@@ -62,12 +62,24 @@ public class TerrainAssembler : MonoBehaviour
 
         return go;
     }
+    private void OnEnable()
+    {
+        terrainDataObject.OnChanged += GenerateTerrainInChunksFromTerrainData;
+    }
+    private void OnDisable()
+    {
+        terrainDataObject.OnChanged -= GenerateTerrainInChunksFromTerrainData;
+    }
     private void Start()
     {
-        GenerateTerrainInChunks(generator.GenerateHeightmap());
+        //GenerateTerrainInChunks(generator.GenerateHeightmap());
     }
     private const int CHUNK_SIZE = 16;
 
+    private void GenerateTerrainInChunksFromTerrainData()
+    {
+        GenerateTerrainInChunks(terrainDataObject.heightmap);
+    }
     private void GenerateTerrainInChunks(int[,] inputArray)
     {
         terrainParent = new GameObject("Terrain");

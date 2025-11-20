@@ -15,9 +15,15 @@ public class TerrainGenerator : MonoBehaviour
     
     public int MaxHeight;
     public int maxStep;
+    [Header("Terrain Data")]
+    public TileTypeCollection tileTypeCollection;
+    public TerrainData terrainData;
     private void Start()
     {
-        
+        if (terrainData != null) {
+            terrainData.SetHeightmap(GenerateHeightmap());
+            terrainData.tileTypeCollection = tileTypeCollection;
+        } 
     }
     public void EnforceChunkMultiple(ref int width, ref int height)
     {

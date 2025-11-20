@@ -405,13 +405,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 855b023d329095a4c8af33cebf3c5947, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  width: 100
-  height: 100
+  width: 128
+  height: 128
   octaves: 4
   seed: 123
   PerlinScale: 0.47
   MaxHeight: 30
   maxStep: 1
+  tileTypeCollection: {fileID: 11400000, guid: b690099498e4a384ab023bda261a0688, type: 2}
+  terrainData: {fileID: 11400000, guid: b04ff617368075443a05f340a4a5ae48, type: 2}
 --- !u!114 &2120611415
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -424,6 +426,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fb4a6285f8171b648862c1da11475483, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  terrainDataObject: {fileID: 11400000, guid: b04ff617368075443a05f340a4a5ae48, type: 2}
   cellSize: 2
   tileMeshSet: {fileID: 11400000, guid: f698f97f17387464798ad1cf47122551, type: 2}
   material: {fileID: 2100000, guid: b74ea86db84536c41bc3c6e8580ee318, type: 2}
