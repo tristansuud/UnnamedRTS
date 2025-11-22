@@ -13,7 +13,6 @@ public class TerrainAssembler : MonoBehaviour
     [Header("Terrain Assembler Parameters")]
     public TerrainData terrainDataObject;
     public float cellSize = 1f;
-    public TileTypeCollection tileTypeCollection;
     [Header("Terrain tile Shapes data")]
     public TileMeshSet tileMeshSet;
     [Header("Material")]
@@ -90,6 +89,17 @@ public class TerrainAssembler : MonoBehaviour
     }
     private void GenerateTerrainInChunks(int[,] inputArray, int[,] tileTypeMap)
     {
+        if (tileTypeMap.GetLength(0) != inputArray.GetLength(0))
+        {
+            Debug.LogError("Input array and tile Type map width");
+            return;
+        }
+        if (tileTypeMap.GetLength(1) != inputArray.GetLength(1))
+        {
+            Debug.LogError("Input array and tile Type map height mismatch.");
+            return;
+        }
+
         terrainParent = new GameObject("Terrain");
         terrainParent.transform.position = Vector3.zero;
         terrainParent.transform.rotation = Quaternion.Euler(Vector3.zero);
@@ -157,7 +167,7 @@ public class TerrainAssembler : MonoBehaviour
                     Quaternion.Euler(0, tileClassified.Rotation, 0), tileTypeMap[gx, gz]
                 );
                 TileCoord tileCoord = new TileCoord(gx, gz);
-                Tile tileInstance = new Tile(tileCoord, new Vector3(gx, h, gz), tileTypeCollection.TileTypes[tileTypeMap[gx, gz]], tileClassified.Type);
+                Tile tileInstance = new Tile(tileCoord, new Vector3(gx, h, gz), terrainDataObject.tileTypeCollection.TileTypes[tileTypeMap[gx, gz]], tileClassified.Type);
 
                 gameTerrain.RegisterTileInstance(tileInstance);
             }

@@ -21,11 +21,25 @@ public class TerrainGenerator : MonoBehaviour
     private void Start()
     {
         if (terrainData != null) {
-            terrainData.TileTypeMap = GenerateQuantizedPerlin(width - 1, height - 1, octaves, seed, PerlinScale, 5);
+            terrainData.TileTypeMap = GenerateRandomArray(width - 1, height - 1, 0, 2);
             terrainData.SetHeightmap(GenerateHeightmap());
             terrainData.tileTypeCollection = tileTypeCollection;
             
         } 
+    }
+    int[,] GenerateRandomArray(int width, int height, int minValue, int maxValue)
+    {
+        int[,] result = new int[width, height];
+        System.Random rng = new System.Random();
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                result[x, y] = rng.Next(minValue, maxValue + 1);
+                
+            }
+        }
+        return result;
     }
     public void EnforceChunkMultiple(ref int width, ref int height)
     {
