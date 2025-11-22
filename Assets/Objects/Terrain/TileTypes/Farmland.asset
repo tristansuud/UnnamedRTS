@@ -12,5 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 26675c18aec974f4196a3f817636396a, type: 3}
   m_Name: Farmland
   m_EditorClassIdentifier: 
-  name: farmland
   material: {fileID: 2100000, guid: a948919aeb609dd4aa02d3cc30586505, type: 2}
+  isBuildable: 0
+  isGround: 1
+  isWater: 0

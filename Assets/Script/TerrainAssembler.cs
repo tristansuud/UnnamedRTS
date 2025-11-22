@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using Unity.VisualScripting;
 using UnityEngine;
 
@@ -12,37 +13,44 @@ public class TerrainAssembler : MonoBehaviour
     [Header("Terrain Assembler Parameters")]
     public TerrainData terrainDataObject;
     public float cellSize = 1f;
+    public TileTypeCollection tileTypeCollection;
     [Header("Terrain tile Shapes data")]
     public TileMeshSet tileMeshSet;
     [Header("Material")]
     public Material material;
+    public Texture2D terrainAtlas;
+    public Shader terrainShader;
+    public int AtlasImageSize = 1024; // mandatory square
+    public int AtlasTileSize = 32; // mandatory square
     [Header("Temporary")]
     public TerrainGenerator generator;
+    public GameTerrain gameTerrain;
+    public TileType defaultTileType;
 
 
     private GameObject terrainParent;
-    public enum TileType
+    
+    private int atlasColCount;
+    private int atlasRowCount;
+    private void Awake()
     {
-        Flat,
-        Ramp,
-        OneCorner,
-        ThreeCorner,
-        Saddle,
-        Steep
+        atlasColCount = AtlasImageSize / AtlasTileSize;
+        atlasRowCount = atlasColCount;
+        //Debug.Log("Got values: " + atlasColCount);
     }
     public struct TileResult
     {
-        public TileType Type;
+        public Tile.TileShapeType Type;
         public int Rotation;   // 0, 90, 180, 270 degrees
     }
-    private Mesh ResolveTileMesh(TileType t)
+    private Mesh ResolveTileMesh(Tile.TileShapeType t)
     {
-        if (t == TileType.Flat) { return tileMeshSet.FlatTile; }
-        if (t == TileType.Ramp) { return tileMeshSet.RampTile; }
-        if (t == TileType.OneCorner) { return tileMeshSet.Corner1Tile; }
-        if (t == TileType.ThreeCorner) { return tileMeshSet.Corner3Tile; }
-        if (t == TileType.Saddle) { return tileMeshSet.SaddleTile; }
-        if (t == TileType.Steep) { return tileMeshSet.SteepTile; }
+        if (t == Tile.TileShapeType.Flat) { return tileMeshSet.FlatTile; }
+        if (t == Tile.TileShapeType.Ramp) { return tileMeshSet.RampTile; }
+        if (t == Tile.TileShapeType.OneCorner) { return tileMeshSet.Corner1Tile; }
+        if (t == Tile.TileShapeType.ThreeCorner) { return tileMeshSet.Corner3Tile; }
+        if (t == Tile.TileShapeType.Saddle) { return tileMeshSet.SaddleTile; }
+        if (t == Tile.TileShapeType.Steep) { return tileMeshSet.SteepTile; }
         else { return tileMeshSet.FlatTile; }
     }
     
@@ -78,9 +86,9 @@ public class TerrainAssembler : MonoBehaviour
 
     private void GenerateTerrainInChunksFromTerrainData()
     {
-        GenerateTerrainInChunks(terrainDataObject.heightmap);
+        GenerateTerrainInChunks(terrainDataObject.heightmap, terrainDataObject.TileTypeMap);
     }
-    private void GenerateTerrainInChunks(int[,] inputArray)
+    private void GenerateTerrainInChunks(int[,] inputArray, int[,] tileTypeMap)
     {
         terrainParent = new GameObject("Terrain");
         terrainParent.transform.position = Vector3.zero;
@@ -89,6 +97,8 @@ public class TerrainAssembler : MonoBehaviour
         int width = inputArray.GetLength(0);
         int height = inputArray.GetLength(1);
 
+        gameTerrain.RegisterNewMapInstance(width-1, height-1);
+
         int chunkCountX = width / CHUNK_SIZE;
         int chunkCountZ = height / CHUNK_SIZE;
 
@@ -96,16 +106,21 @@ public class TerrainAssembler : MonoBehaviour
         {
             for (int cx = 0; cx < chunkCountX; cx++)
             {
-                GenerateChunk(inputArray, cx, cz);
+                GenerateChunk(inputArray, cx, cz, tileTypeMap);
             }
         }
+        //gameTerrain.LogAllTilePositions();
     }
-    private void GenerateChunk(int[,] input, int chunkX, int chunkZ)
+    private int CheckerBoard(int number)
+    {
+        return number % 2 == 0 ? 0 : 1;
+    }
+    private void GenerateChunk(int[,] input, int chunkX, int chunkZ, int[,] tileTypeMap)
     {
         int startX = chunkX * CHUNK_SIZE;
         int startZ = chunkZ * CHUNK_SIZE;
 
-
+        
 
         List<Vector3> verts = new List<Vector3>();
         List<Vector3> norms = new List<Vector3>();
@@ -129,18 +144,22 @@ public class TerrainAssembler : MonoBehaviour
                 int C = input[gx, gz + 1];
                 int D = input[gx + 1, gz + 1];
 
-                TileResult tile = ClassifyTile(A, B, C, D);
+                TileResult tileClassified = ClassifyTile(A, B, C, D);
                 int h = DetermineTileHeight(A, B, C, D);
 
-                Mesh tileMesh = ResolveTileMesh(tile.Type);
+                Mesh tileMesh = ResolveTileMesh(tileClassified.Type);
 
                 AppendTileMesh(
                     tileMesh,
                     verts, norms, uvs, tris,
                     ref triOffset,
                     new Vector3((float)x * cellSize, h, (float)z * cellSize),
-                    Quaternion.Euler(0, tile.Rotation, 0)
+                    Quaternion.Euler(0, tileClassified.Rotation, 0), tileTypeMap[gx, gz]
                 );
+                TileCoord tileCoord = new TileCoord(gx, gz);
+                Tile tileInstance = new Tile(tileCoord, new Vector3(gx, h, gz), tileTypeCollection.TileTypes[tileTypeMap[gx, gz]], tileClassified.Type);
+
+                gameTerrain.RegisterTileInstance(tileInstance);
             }
         }
 
@@ -152,7 +171,10 @@ public class TerrainAssembler : MonoBehaviour
         MeshFilter mf = chunk.AddComponent<MeshFilter>();
         MeshRenderer mr = chunk.AddComponent<MeshRenderer>();
         MeshCollider mc = chunk.AddComponent<MeshCollider>();
-        mr.sharedMaterial = material;
+        Material ChunkMaterial = new Material(terrainShader);
+        ChunkMaterial.mainTexture = terrainAtlas;
+        mr.sharedMaterial = ChunkMaterial;
+        
 
         Mesh combined = new Mesh();
         combined.name = $"ChunkMesh_{chunkX}_{chunkZ}";
@@ -173,7 +195,7 @@ public class TerrainAssembler : MonoBehaviour
     List<int> tris,
     ref int triOffset,
     Vector3 worldPos,
-    Quaternion rot)
+    Quaternion rot, int AtlasIndex)
     {
         Vector3[] v = src.vertices;
         Vector3[] n = src.normals;
@@ -187,7 +209,7 @@ public class TerrainAssembler : MonoBehaviour
             norms.Add(rot * n[i]);
 
         for (int i = 0; i < uv.Length; i++)
-            uvs.Add(uv[i]);
+            uvs.Add(RemapUV(uv[i], AtlasIndex, atlasColCount, atlasRowCount));
 
         for (int i = 0; i < t.Length; i++)
             tris.Add(t[i] + triOffset);
@@ -238,7 +260,7 @@ public class TerrainAssembler : MonoBehaviour
 
         if (a == 0 && b == 0 && c == 0 && d == 0)
         {
-            result.Type = TileType.Flat;
+            result.Type = Tile.TileShapeType.Flat;
             result.Rotation = 0;
 
             return result;
@@ -251,7 +273,7 @@ public class TerrainAssembler : MonoBehaviour
 
         if (steep)
         {
-            result.Type = TileType.Steep;
+            result.Type = Tile.TileShapeType.Steep;
 
 
             if (a == 0 && d == 2) result.Rotation = 270;
@@ -273,7 +295,7 @@ public class TerrainAssembler : MonoBehaviour
 
         if (count1 == 1)
         {
-            result.Type = TileType.OneCorner;
+            result.Type = Tile.TileShapeType.OneCorner;
 
             if (a == 1) result.Rotation = 90;
             else if (b == 1) result.Rotation = 0;
@@ -286,7 +308,7 @@ public class TerrainAssembler : MonoBehaviour
 
         if (count1 == 3)
         {
-            result.Type = TileType.ThreeCorner;
+            result.Type = Tile.TileShapeType.ThreeCorner;
 
             if (a == 0) result.Rotation = 0;
             else if (b == 0) result.Rotation = 270;
@@ -302,31 +324,31 @@ public class TerrainAssembler : MonoBehaviour
 
             if (a == 1 && b == 1)
             {
-                result.Type = TileType.Ramp;
+                result.Type = Tile.TileShapeType.Ramp;
                 result.Rotation = 0;
                 return result;
             }
             if (b == 1 && d == 1)
             {
-                result.Type = TileType.Ramp;
+                result.Type = Tile.TileShapeType.Ramp;
                 result.Rotation = 270;
                 return result;
             }
             if (d == 1 && c == 1)
             {
-                result.Type = TileType.Ramp;
+                result.Type = Tile.TileShapeType.Ramp;
                 result.Rotation = 180;
                 return result;
             }
             if (c == 1 && a == 1)
             {
-                result.Type = TileType.Ramp;
+                result.Type = Tile.TileShapeType.Ramp;
                 result.Rotation = 90;
                 return result;
             }
 
 
-            result.Type = TileType.Saddle;
+            result.Type = Tile.TileShapeType.Saddle;
 
 
             if (a == 0) result.Rotation = 0;
@@ -338,11 +360,24 @@ public class TerrainAssembler : MonoBehaviour
         }
 
 
-        result.Type = TileType.Flat;
+        result.Type = Tile.TileShapeType.Flat;
         result.Rotation = 0;
         return result;
     }
 
-    
-    
+    Vector2 RemapUV(Vector2 uv, int tileIndex, int colCount, int rowCount)
+    {
+        int col = tileIndex % colCount;
+        int row = tileIndex / colCount;
+
+        float cellW = 1.0f / colCount;
+        float cellH = 1.0f / rowCount;
+        Vector2 resultVector = new Vector2(
+            uv.x * cellW + col * cellW,
+            1 - (uv.y * cellH + row * cellH)
+        );
+        //Debug.Log(resultVector);
+        return resultVector;
+    }
+
 }

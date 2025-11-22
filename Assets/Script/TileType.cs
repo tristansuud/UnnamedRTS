@@ -5,6 +5,8 @@ using UnityEngine;
 [CreateAssetMenu(menuName ="Terrain Objects/TileType")]
 public class TileType : ScriptableObject
 {
-    public string name;
-    public Material material;
+    public int AtlasIndex;
+    public bool isBuildable;
+    public bool isGround;
+    public bool isWater;
 }

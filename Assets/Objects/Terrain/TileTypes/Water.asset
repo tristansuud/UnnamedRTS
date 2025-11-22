@@ -12,5 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 26675c18aec974f4196a3f817636396a, type: 3}
   m_Name: Water
   m_EditorClassIdentifier: 
-  name: water
   material: {fileID: 2100000, guid: b80959877b5c1c349a04d0d516a60494, type: 2}
+  isBuildable: 0
+  isGround: 0
+  isWater: 1

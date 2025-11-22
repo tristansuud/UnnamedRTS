@@ -21,8 +21,10 @@ public class TerrainGenerator : MonoBehaviour
     private void Start()
     {
         if (terrainData != null) {
+            terrainData.TileTypeMap = GenerateQuantizedPerlin(width - 1, height - 1, octaves, seed, PerlinScale, 5);
             terrainData.SetHeightmap(GenerateHeightmap());
             terrainData.tileTypeCollection = tileTypeCollection;
+            
         } 
     }
     public void EnforceChunkMultiple(ref int width, ref int height)
